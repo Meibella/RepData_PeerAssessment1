@@ -1,5 +1,6 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+AUthor: Mei
 output: 
   html_document:
     keep_md: true
@@ -14,7 +15,7 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE)
 1. Make sure the current directory is set correctly  
 1. Load the activity data  
 ```{r}
-setwd("~/GitHub/RepData/RepData_PeerAssessment1")
+setwd("~/Coursera/RepData_PeerAssessment1")
 rawdata <- read.csv("./activity.csv")
 ```
 
@@ -55,6 +56,7 @@ totaldailyMedian = median(totaldaily$total, na.rm=TRUE)
 
 ```{r}
 maxInterval <- avgAcrossDays[which.max( avgAcrossDays[,2]),1]
+ 
 ```
 
   The interval:`r maxInterval` contains the maximum number of steps
@@ -73,9 +75,9 @@ missing <- nrow(rawdata[is.na(rawdata$steps),])
 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
 ```{r}
-##Use average daily to fill the missing values, if all NA's for that day, use 0 
+##Use average daily to fill the missing values, if all NA's for that day, use average across all days
 avgdaily <- aggregate(list(avg=rawdata$steps), list(date = rawdata$date), FUN=mean, na.rm=FALSE)
-avgdaily[is.na(avgdaily$avg),2] <- 0
+avgdaily[is.na(avgdaily$avg),2] <- mean(rawdata$steps, na.rm=TRUE)
 ```
   
   
@@ -100,4 +102,30 @@ totaldailyMediannew = median(totaldailynew$total, na.rm=TRUE)
 ## Are there differences in activity patterns between weekdays and weekends?
 
 
+1.Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+```{r}
+newdata$dayofweek <- weekdays(as.Date(newdata$date))
+```
+
+2.Make a panel plot containing a time series plot (i.e.  type = "l" ) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was created using simulated data:
+
+```{r}
+## Split the data to two groups
+newdata$daygroup <- "weekday"
+newdata$daygroup[which(newdata$dayofweek == "Sunday" | newdata$dayofweek == "Saturday")] <- "weekend"
+ 
+##Calculate two data and combine them for plotting
+weekendavg <- aggregate(list(avg=newdata$steps[which(newdata$daygroup=="weekend")]), list(interval=newdata$interval[which(newdata$daygroup=="weekend")]), FUN=mean, na.rm=FALSE)
+weekdayavg <- aggregate(list(avg=newdata$steps[which(newdata$daygroup=="weekday")]), list(interval=newdata$interval[which(newdata$daygroup=="weekday")]), FUN=mean, na.rm=FALSE)
+
+weekendavg$daygroup <- "weekend"
+weekdayavg$daygroup <- "weekday"
+
+combinedData <- rbind(weekdayavg, weekendavg)
+
+library(ggplot2)
+qplot(interval, avg, data=combinedData, xlab="interval", ylab="average steps", facets= . ~ daygroup )
+
+```
 
